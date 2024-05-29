@@ -195,12 +195,113 @@ int main()
 			throw "有一个人前来抛异常。";
 		};
 		try {
-			fddd();
+			//fddd(); //异常会被抛出，且无法捕获
 		}
 		catch (const char* ex) {
 			cout << ex << endl;
 			cout << "异常的保护伞？该罚！" << endl;
 		}
 	}
+
+	//5.自定义异常体系
+	{
+		//C++标准库的异常体系定义得不好，所以实际使用中很多公司都会自定义自己的异常体系进行规范的异常管理
+		cout << "=======================5.自定义异常体系=======================" << endl;
+		//最基础的异常类至少需要包含错误编号和错误描述两个成员变量
+		//还需要一个返回异常信息的what()方法（数组成虚函数，让子类可以重写，实现多态）
+		class Exception {
+		public:
+			Exception()
+				:_errorMessage("unknow exception!")
+				, _id(-1)
+			{
+			}
+			Exception(string& errorMessage, int id = 0)
+				:_errorMessage("unknow exception!")
+				,_id(-1)
+			{
+				_errorMessage = errorMessage;
+				_id = id;
+			}
+			virtual string what()
+			{
+				return _errorMessage;
+			}
+		protected:
+			string _errorMessage;
+			int _id;
+		};
+		//其他异常都要基于这个异常基类进行扩展，
+		//即：其他所以异常都要继承Exception类，且重写what()方法，然后在此基础上进行扩写。
+		class SQLException : public Exception
+		{
+		public:
+			SQLException(string errorMessage = "unknow exception!", int id = 1, string sql = "DDL")
+				:Exception(errorMessage, id) //要在子类初始化列表中调用父类的构造函数
+				, _sql(sql)
+			{
+			}
+			virtual string what()
+			{
+				string str = "SqlException:";
+				str += _errorMessage;
+				str += "->";
+				str += _sql;
+				return str;
+
+			}
+		private:
+			string _sql;
+		};
+
+		try
+		{
+			throw Exception();
+		}
+		catch(Exception& ex) //使用父类引用或指针来接收才能完成多态。
+		{
+			cout << ex.what() << endl;
+		}
+
+		try
+		{
+			throw SQLException("结尾没有;在MySQL中，SQL语句的结尾通常使用分号（;）作为语句的结束符。", 2, "select id from Student");
+		}
+		catch (Exception& ex) //实现多态，必须使用父类引用或指针来接收子类对象
+		{
+			cout << ex.what() << endl;
+		}
+
+		try
+		{
+			throw SQLException("结尾没有;在MySQL中，SQL语句的结尾通常使用分号（;）作为语句的结束符。", 2, "select id from Student");
+		}
+		catch (Exception ex) //不使用父类引用或指针来接收子类对象，调用的是父类的方法
+		{
+			cout << ex.what() << endl; //调用的是最近能匹配上的catch，所以异常基类和...一般要写在最后面。
+		}
+		catch (SQLException& ex)
+		{
+			cout << ex.what() << endl; //子类异常最好写在父类异常前面，不然会先被父类异常接收。
+		}
+		catch (...)
+		{
+			cout << "Unknow Exception!" << endl;
+		}
+		/*catch (SQLException& ex)
+		{
+			cout << ex.what() << endl;
+		}*/
+	}
+
+	//6.C++异常的优点：
+		//a.异常不需要利用返回值，错误码需要用返回值来返回，但有的函数没有返回值（如构造），有的函数需要返回值返回函数结果。
+		//b.异常通常是一个对象，能更好的展示错误信息。
+		//c.如果一个错误信息要跨越多层函数，异常只需要不断抛出，而错误码要不断return，最外层才能拿到错误。
+		//d.异常符合OOP，而且许多常用的第三方库都包含异常（如 boost、gtest、gmock。）
+	//7.C++异常的缺点：
+		//a.C++没有垃圾回收机制，资源需要自己管理。胡乱抛出异常可能导致异常安全问题。
+		//b.C++标准库的异常体系定义得不好。
+		//c.异常会有一些性能的开销。
 	return 0;
 }
