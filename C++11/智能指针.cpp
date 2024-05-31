@@ -9,7 +9,8 @@
  * 它的原理很简单，即：在构造函数中申请资源，在析构函数中释放资源。
  * 像这样将资源的获取和释放与对象的生命周期绑定，实现了资源的自动管理，避免了内存泄露等问题。
 
- * 总结：RAII是C++中一种重要的编程范式，它通过将资源的获取和释放与对象的生命周期绑定，实现了资源的自动管理，避免了内存泄露等问题。
+ * 总结：RAII是C++中一种重要的编程范式，它通过将资源的获取和释放与对象的生命周期绑定，
+ * 实现了资源的自动管理，避免了内存泄露等问题。
  */
 
 /** 3.什么是智能指针？
@@ -21,3 +22,110 @@
  * a. 自动释放内存：当智能指针对象生命周期结束时（例如离开作用域），它会自动删除所指向的对象。这通过析构函数中的delete操作符实现。
  * b. 防止野指针：野指针是指已经被释放的内存的指针。智能指针通过确保在析构时删除所指向的对象，并在之后将指针设置为nullptr（或类似无效值），从而防止野指针的出现。
  */
+
+#include<iostream>
+using namespace std;
+
+//1. 简单实现一个智能指针类模板
+// a. 类模板，有一个模板成员变量。
+// b. 在构造函数和析构函数中申请和释放资源。
+// c. 重载-> 和 * 
+
+// a. 类模板，有一个模板成员变量。
+template<typename T>
+class SmartPtr
+{
+public:
+	// b. 在构造函数和析构函数中申请和释放资源。
+	SmartPtr(T* object = nullptr)
+		:_object(object)
+	{}
+
+	~SmartPtr()
+	{
+		if(_object != nullptr) //delete前要记得判断是不是空指针
+			delete _object;
+	}
+
+	T& operator *() //解引用
+	{
+		return *_object; 
+	}
+	// c. 重载-> 和 * 
+	T* operator ->() //访问成员
+	{
+		return _object;
+	}
+
+	T** operator &() //取地址
+	{
+		return &_object; 
+	}
+
+	template<typename E> // 返回指针地址
+	friend std::ostream& operator << (std::ostream& os, SmartPtr<E>& ptr);
+private:
+	T* _object;
+};
+
+template<typename E>
+std::ostream& operator << (std::ostream& os, SmartPtr<E>& ptr)
+{
+	os << ptr._object;
+	return os;
+}
+
+int main()
+{
+	// 1. 简单设计一个智能指针
+	{
+		struct Student
+		{
+			Student(int age = 18)
+				:_age(age)
+			{}
+
+			int _age;
+		};
+
+		SmartPtr<int> pa(new int(1));
+		cout << *pa << endl;
+		cout << &pa << endl;
+		cout << pa << endl << endl;
+
+		SmartPtr<Student> pb(new Student(19));
+		cout << (*pb)._age << endl;
+		cout << pb << endl; //在C++中，不能直接输出一个对象（即使用 std::cout 或类似的输出流来输出一个对象），除非该对象类型重载了 operator<< 函数以支持流插入操作。
+		cout << &pb << endl;
+		cout << pb->_age << endl;
+		//-> 运算符的操作数只有一个，那就是指针 pb，所以 -> 是一个单目运算符。
+	}
+	
+	/** 上面的简单设计，还存在许多问题，如：
+	 * 默认拷贝构造和赋值运算符重载是浅拷贝会导致双重析构。
+	 * 还有线程不安全的问题。
+	 * 
+	 * 所以C++的<memory>库中也提供了智能指针，且针对以上问题提供了不同种类的智能指针。
+	 * a. auto_ptr (C++98) : 通过管理权转移的方式解决智能指针的拷贝问题，
+	 *    对一个对象的管理权转移后也就意味着，该对象不能再用对原来管理的资源进行访问了，
+	 *    会造成对象悬空，继续使用原来的对象，程序就会直接崩溃。
+	 * 
+	 * b. unique_ptr (C++11) : 通过防拷贝的方式解决智能指针的拷贝问题，
+	 *    也就是简单粗暴的禁止拷贝，这样也能保证资源不会被多次释放
+	 * 
+	 * c. shared_ptr (C++11) : 通过引用计数的方式解决智能指针的拷贝问题，
+	 *    也就是说shared_ptr支持拷贝。
+	 * d. weak_ptr (C++11) : weak_ptr不是用来管理资源的释放的，weak_ptr 是对 shared_ptr的补充。
+	 */
+	
+	// 2.<memory>中提供的智能指针auto_ptr (C++98)
+	{
+		
+	}
+
+	/*std::unique_ptr：这是一个独占所有权的智能指针，即同一时间只有一个unique_ptr可以指向一个给定对象。当unique_ptr被销毁时，它所指向的对象也会被销毁。
+	std::shared_ptr：这是一个共享所有权的智能指针，多个shared_ptr可以指向同一个对象。当最后一个拥有该对象的shared_ptr被销毁时，对象才会被销毁。
+	std::weak_ptr：这是为了配合std::shared_ptr而引入的一种智能指针，用来解决std::shared_ptr相互引用导致的循环引用问题。它不对对象的生命周期进行管理，只是简单地保存对一个std::shared_ptr的弱引用，这样不会增加对象的引用计数。
+	*/
+	return 0;
+}
