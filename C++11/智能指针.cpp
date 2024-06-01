@@ -14,7 +14,7 @@
  */
 
 /** 3.什么是智能指针？
- *  智能指针就是基于RAII编程范式而编写的一系列类模板，
+ *  智能指针就是基于RAII编程范式而编写的一系列类模板，用来帮助我们管理对象，且让我们能像指向对象的指针一样使用智能指针。
  *  它提供了自动内存管理（自动释放所指向的对象），
  *  且在类中重载了-> 和 * 运算符，让我们能像指针一样使用该类模板，故叫智能指针。
  
@@ -27,7 +27,7 @@
 #include<memory>
 using namespace std;
 
-//1. 简单实现一个智能指针类模板
+//0. 简单实现一个智能指针类模板
 // a. 类模板，有一个模板成员变量。
 // b. 在构造函数和析构函数中申请和释放资源。
 // c. 重载-> 和 * 
@@ -78,9 +78,9 @@ std::ostream& operator << (std::ostream& os, SmartPtr<E>& ptr)
 
 int main()
 {
-	// 1. 简单设计一个智能指针
+	// 0. 简单设计一个智能指针
 	{
-		cout << "============1. 简单设计一个智能指针=============" << endl;
+		cout << "============0. 简单设计一个智能指针=============" << endl;
 		struct Student
 		{
 			Student(int age = 18)
@@ -120,9 +120,9 @@ int main()
 	 * d. weak_ptr (C++11) : weak_ptr不是用来管理资源的释放的，weak_ptr 是对 shared_ptr的补充。
 	 */
 	
-	// 2.auto_ptr (C++98) <memory>
+	// 1.auto_ptr (C++98) <memory>
 	{
-		cout << "================2.auto_ptr===============" << endl;
+		cout << "================1.auto_ptr===============" << endl;
 		// get() : 返回auto_ptr 指向的对象的指针（如果有），如果它不指向任何对象，则返回零。
 		// operator *():返回对 auto_ptr 指向的对象的引用。
 		// operator ->() : 返回auto_ptr 指向的对象的成员。
@@ -154,8 +154,153 @@ int main()
 		// 大多数公司认为auto_ptr设计的并不好，且禁止使用auto_ptr
 	}
 
-	// 3. unique_ptr (C++11) <memory>
+	// 2. unique_ptr (C++11) <memory>
 	{
+		cout << "================2. unique_ptr===============" << endl;
+		// .get() : 返回auto_ptr 指向的对象的指针（如果有），如果它不指向任何对象，则返回零。
+		// operator *():返回对 auto_ptr 指向的对象的引用。
+		// operator ->() : 返回auto_ptr 指向的对象的成员。
+		// .release() : 将auto_ptr内部指针设置为空指针（这表示它不指向任何对象）
+		//             并返回auto_ptr指向对象的指针，该对象不再是它负责销毁的。
+		// .reset() : 销毁 auto_ptr所指向的对象（如果有）,并把一个新对象赋值给auto_ptr（如果有）
+		
+		// .swap() && swap() : 交换
+		// operator bool() : 判空，if()
+
+		// operator[] : 数组访问。
+		std::unique_ptr<int> uptr(new int(1));
+		cout << ">>>std::unique_ptr<int> uptr(new int(1));" << endl;
+		cout << "uptr.get() : " << uptr.get() << endl;
+		cout << "*uptr.get() :" << *uptr.get() << endl;
+
+		int* a = uptr.release();
+		cout << ">>>int* a = uptr.release();" << endl;
+		cout << "uptr.get() : " <<  uptr.get() << endl;
+		cout << "a : " << a << endl;
+		if (uptr)
+			cout << "uptr are not empty." << endl;
+		else
+			cout << "uptr are empty." << endl;
+
+		uptr.reset(new int(4));
+		cout << ">>>uptr.reset(new int(4));" << endl;
+		cout << "uptr.get() : " << uptr.get() << endl;
+		cout << "*uptr.get() : " << *uptr.get() << endl;
+		if (uptr)
+			cout << "uptr are not empty." << endl;
+		else
+			cout << "uptr are empty." << endl;
+
+		//.swap() & swap()
+		std::unique_ptr<int> uptr1(new int(2));
+		cout << ">>> unique_ptr<int> uptr1(new int(2));" << endl;
+		cout << "uptr.get() : " << uptr.get() << " -> " << *uptr.get() << endl;
+		cout << "uptr1.get() : " << uptr1.get() << " -> " << *uptr1.get() << endl;
+		uptr1.swap(uptr);
+		cout << ">>> uptr1.swap(uptr);" << endl;
+		cout << "uptr.get() : " << uptr.get() << " -> " << *uptr.get() << endl;
+		cout << "uptr1.get() : " << uptr1.get() << " -> " << *uptr1.get() << endl;
+		swap(uptr1, uptr);
+		cout << ">>> swap(uptr1, uptr);" << endl;
+		cout << "uptr.get() : " << uptr.get() << " -> " << *uptr.get() << endl;
+		cout << "uptr1.get() : " << uptr1.get() << " -> " << *uptr1.get() << endl;
+
+		//operator[] : 像数组一样访问。
+		//原理 ： 指针加法
+		std::unique_ptr<int[]> uptr2(new int[] {11, 12, 13, 14, 15});
+		cout << ">>>unique_ptr<int[]> uptr2(new int[] {11,12,13,14,15});" << endl;
+		cout << "uptr2.get() : " << uptr2.get() << " -> " << *uptr2.get() << endl;
+		for(int i = 0; i < 5; ++i)
+			cout << "uptr2[" << i << "] = " << uptr2[i] << endl;
+
+		// unique_ptr 通过禁止拷贝构造来，解决拷贝问题
+		//std::unique_ptr<int> uptr1(uptr); //报错
+	}
+
+	// 3. shared_ptr (C++11) <memory>
+	{
+		// .get() : 返回auto_ptr 指向的对象的指针（如果有），如果它不指向任何对象，则返回零。
+		// operator *():返回对 auto_ptr 指向的对象的引用。
+		// operator ->() : 返回auto_ptr 指向的对象的成员。
+		// 没有.release() 。
+		// .reset() : 销毁 auto_ptr所指向的对象（如果有）,并把一个新对象赋值给auto_ptr（如果有）
+
+		// .swap & swap() : 交换
+		// operator bool() : 判空，if()
+
+		// use_const() : 返回当前智能指针的引用计数。
+		// unique : 判断当前智能指针的引用计数是否为1。
+
+		cout << "================3.shared_ptr===============" << endl;
+		shared_ptr<int> sptr(new int(1));
+		cout << ">>>shared_ptr<int> sptr(new int(1));" << endl;
+		cout << "sptr.get() : " << sptr.get() << " -> " << *sptr.get() << endl;
+		if (sptr)
+			cout << "sptr are not empty." << endl;
+		else
+			cout << "sptr are empty." << endl;
+		//没有release() //int* pa = sptr.release(); //报错
+
+		sptr.reset();
+		cout << ">>>sptr.reset();" << endl;
+		cout << "sptr.get() : " << sptr.get() << endl;
+		if (sptr)
+			cout << "sptr are not empty." << endl;
+		else
+			cout << "sptr are empty." << endl;
+
+		shared_ptr<int> sptr1(new int(4));
+		cout << ">>>shared_ptr<int> sptr1(new int(4));" << endl;
+		cout << "sptr.get() : " << sptr.get() << endl;
+		cout << "sptr1.get() : " << sptr1.get() << " -> " << *sptr1.get() << endl;
+		sptr1.swap(sptr);
+		cout << ">>> sptr1.swap(sptr());" << endl;
+		cout << "sptr.get() : " << sptr.get() << " -> " << *sptr.get() << endl;
+		cout << "sptr1.get() : " << sptr1.get() << endl;
+		swap(sptr1, sptr);
+		cout << ">>> swap(sptr1, sptr);" << endl;
+		cout << "sptr.get() : " << sptr.get() << endl;
+		cout << "sptr1.get() : " << sptr1.get() << " -> " << *sptr1.get() << endl;
+
+		//shared_ptr通过引用计数的方式解决智能指针的拷贝问题
+		//也就是说shared_ptr支持拷贝构造
+		shared_ptr<int> a(new int(1));
+		shared_ptr<int> b(a);
+		shared_ptr<int> c(b);
+		shared_ptr<int> d(new int (4));
+		cout << endl << "a.unique() : " << a.unique() << endl;
+		cout << "a.use_count() : " << a.use_count() << endl;
+		cout <<  "b.unique() : " << b.unique() << endl;
+		cout << "b.use_count() : " << b.use_count() << endl;
+		cout << "c.unique() : " << c.unique() << endl;
+		cout << "c.use_count() : " << c.use_count() << endl;
+		cout << endl << "d.unique() : " << d.unique() << endl;
+		cout << "d.use_count() : " << d.use_count() << endl;
+		a.reset(); //清除一个引用计数
+		cout << ">>> a.reset();" << endl;
+		cout << endl << "a.unique() : " << a.unique() << endl;
+		cout << "a.use_count() : " << a.use_count() << endl;
+		cout << "b.unique() : " << b.unique() << endl;
+		cout << "b.use_count() : " << b.use_count() << endl;
+		cout << "c.unique() : " << c.unique() << endl;
+		cout << "c.use_count() : " << c.use_count() << endl;
+	}
+	// 4. weak_ptr (C++11) <memory>
+	{
+		// .get() : 返回auto_ptr 指向的对象的指针（如果有），如果它不指向任何对象，则返回零。
+		// operator *():返回对 auto_ptr 指向的对象的引用。
+		// operator ->() : 返回auto_ptr 指向的对象的成员。
+		// 没有.release() 。
+		// .reset() : 销毁 auto_ptr所指向的对象（如果有）,并把一个新对象赋值给auto_ptr（如果有）
+
+		// .swap & swap() : 交换
+		// 没有operator bool()。
+
+		// .use_const() : 返回当前智能指针的引用计数。
+
+		// .expired() : 检查是否过期，即判断weak_ptr对象是否是空的
+		// .lock() : 返回一个shared_ptr，其中包含 weak_ptr 对象保留的信息
+		//           能用shared_ptr来构造weak_ptr，但只能用.lock()来构造shared_ptr.
 
 	}
 	/**
