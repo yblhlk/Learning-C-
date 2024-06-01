@@ -24,6 +24,7 @@
  */
 
 #include<iostream>
+#include<memory>
 using namespace std;
 
 //1. 简单实现一个智能指针类模板
@@ -79,6 +80,7 @@ int main()
 {
 	// 1. 简单设计一个智能指针
 	{
+		cout << "============1. 简单设计一个智能指针=============" << endl;
 		struct Student
 		{
 			Student(int age = 18)
@@ -102,7 +104,7 @@ int main()
 	}
 	
 	/** 上面的简单设计，还存在许多问题，如：
-	 * 默认拷贝构造和赋值运算符重载是浅拷贝会导致双重析构。
+	 * 默认拷贝构造和赋值运算符重载是浅拷贝会导致双重析构。（注意这是指针，只能浅拷贝）
 	 * 还有线程不安全的问题。
 	 * 
 	 * 所以C++的<memory>库中也提供了智能指针，且针对以上问题提供了不同种类的智能指针。
@@ -118,14 +120,48 @@ int main()
 	 * d. weak_ptr (C++11) : weak_ptr不是用来管理资源的释放的，weak_ptr 是对 shared_ptr的补充。
 	 */
 	
-	// 2.<memory>中提供的智能指针auto_ptr (C++98)
+	// 2.auto_ptr (C++98) <memory>
 	{
+		cout << "================2.auto_ptr===============" << endl;
+		// get() : 返回auto_ptr 指向的对象的指针（如果有），如果它不指向任何对象，则返回零。
+		// operator *():返回对 auto_ptr 指向的对象的引用。
+		// operator ->() : 返回auto_ptr 指向的对象的成员。
+		// release() : 将auto_ptr内部指针设置为空指针（这表示它不指向任何对象）
+		//             并返回auto_ptr指向对象的指针，该对象不再是它负责销毁的。
+		// reset() : 销毁 auto_ptr所指向的对象（如果有）,并把一个新对象赋值给auto_ptr（如果有）
+		std::auto_ptr<int> aptr(new int(44));
+		cout <<"aptr.get() : " <<  aptr.get() << " -> " << *aptr.get() << endl;
+		cout << "*aptr : " << *aptr << endl;
 		
+		int* pa = aptr.release();
+		cout << ">>> int* pa = aptr.release();" << endl;
+		cout << "aptr.get() : " << aptr.get() << endl;
+		cout << "pa : " << pa << endl;
+		
+		aptr.reset(new int(4));
+		cout << ">>> aptr.reset(new int(4));" << endl;
+		cout << "aptr.get() : " << aptr.get() << " -> " << *aptr.get() << endl;
+		cout << "*aptr : " << *aptr << endl;
+
+		//auto_ptr，通过移交权限来解决拷贝问题。
+		//实现：将新指针指向的原空间清除后，将旧指针指向的空间赋给新指针，旧指针指向nullptr;
+		std::auto_ptr<int> aptr1(aptr);
+		cout << ">>> auto_ptr<int> aptr1(aptr);" << endl;
+		cout << "aptr.get() : " << aptr.get() << endl;
+		cout << "aptr1.get() : " << aptr1.get() << " -> " << *aptr1.get() << endl;
+		//*aptr.get() << endl;//不报错，但程序奔溃
+		// 所以使用auto_ptr的时候要注意旧指针已经是空指针，不然会导致程序崩溃。
+		// 大多数公司认为auto_ptr设计的并不好，且禁止使用auto_ptr
 	}
 
-	/*std::unique_ptr：这是一个独占所有权的智能指针，即同一时间只有一个unique_ptr可以指向一个给定对象。当unique_ptr被销毁时，它所指向的对象也会被销毁。
-	std::shared_ptr：这是一个共享所有权的智能指针，多个shared_ptr可以指向同一个对象。当最后一个拥有该对象的shared_ptr被销毁时，对象才会被销毁。
-	std::weak_ptr：这是为了配合std::shared_ptr而引入的一种智能指针，用来解决std::shared_ptr相互引用导致的循环引用问题。它不对对象的生命周期进行管理，只是简单地保存对一个std::shared_ptr的弱引用，这样不会增加对象的引用计数。
+	// 3. unique_ptr (C++11) <memory>
+	{
+
+	}
+	/**
+	  std::unique_ptr：这是一个独占所有权的智能指针，即同一时间只有一个unique_ptr可以指向一个给定对象。当unique_ptr被销毁时，它所指向的对象也会被销毁。
+	  std::shared_ptr：这是一个共享所有权的智能指针，多个shared_ptr可以指向同一个对象。当最后一个拥有该对象的shared_ptr被销毁时，对象才会被销毁。
+	  std::weak_ptr：这是为了配合std::shared_ptr而引入的一种智能指针，用来解决std::shared_ptr相互引用导致的循环引用问题。它不对对象的生命周期进行管理，只是简单地保存对一个std::shared_ptr的弱引用，这样不会增加对象的引用计数。
 	*/
 	return 0;
 }
