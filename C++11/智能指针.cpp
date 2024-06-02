@@ -287,11 +287,11 @@ int main()
 	}
 	// 4. weak_ptr (C++11) <memory>
 	{
-		// .get() : 返回auto_ptr 指向的对象的指针（如果有），如果它不指向任何对象，则返回零。
-		// operator *():返回对 auto_ptr 指向的对象的引用。
+		// 没有.get()
+		// 没有operator *()。
 		// operator ->() : 返回auto_ptr 指向的对象的成员。
 		// 没有.release() 。
-		// .reset() : 销毁 auto_ptr所指向的对象（如果有）,并把一个新对象赋值给auto_ptr（如果有）
+		// .reset() : 只是包weak_ptr对象变为空
 
 		// .swap & swap() : 交换
 		// 没有operator bool()。
@@ -299,8 +299,87 @@ int main()
 		// .use_const() : 返回当前智能指针的引用计数。
 
 		// .expired() : 检查是否过期，即判断weak_ptr对象是否是空的
-		// .lock() : 返回一个shared_ptr，其中包含 weak_ptr 对象保留的信息
-		//           能用shared_ptr来构造weak_ptr，但只能用.lock()来构造shared_ptr.
+		// .lock() : 返回weak_ptr 指向的shared_ptr对象
+		//           虽然能用shared_ptr来构造weak_ptr，但只能用.lock()来构造shared_ptr.
+
+		cout << "================4.weak_ptr===============" << endl;
+		//weak_ptr<int> wptr(new int(1)); 
+		//报错，只能用shared_ptr和weak_ptr来创建weak_ptr.
+		shared_ptr<int> sptr(new int(1));
+		weak_ptr<int> wptr(sptr);
+		weak_ptr<int> wptr1(wptr); 
+		weak_ptr<int> wptr2 = wptr1;
+		weak_ptr<int> wptr3(sptr);
+
+		//报错，没有get() //cout << "wptr.get() : " << wptr.get() << endl;
+		//报错，没有operator *()。//cout << *wptr << endl;
+
+		//.use_const() : 计算的是shared_ptr的个数，不是weak_ptr的个数。
+		cout << wptr.use_count() << endl; 
+		cout << wptr1.use_count() << endl;
+		cout << wptr2.use_count() << endl; //不计算weak_ptr的个数。
+		cout << wptr3.use_count() << endl;
+		cout << sptr.use_count() << endl; //shared_ptr的use_count()也不计算weak_ptr的个数
+		cout << sptr.unique() << endl;
+		
+		// .swap() && swap : 交换指向
+
+		// .expired() : 检查是否过期，即判断weak_ptr对象是否是空的
+		cout << "//.expired() :检查是否过期。(0:未过期，1:过期。)" << endl;
+		cout << "wptr.expired() : " << wptr.expired() << endl;
+		sptr.reset();
+		cout << ">>> sptr.reset(); " << endl;
+		cout << "wptr.expired() : " <<wptr.expired() << endl;
+		cout << "结论：改变shared_ptr置空后weak_ptr也置空。" << endl;
+		sptr.reset(new int(4));
+		cout << ">>> sptr.reset(4); " << endl;
+		cout << "wptr.expired() : " << wptr.expired() << endl; //仍然过期，wptr要重新指向sptr
+		cout << "现象：改变shared_ptr置空后再改变指向，weak_ptr仍置空。" << endl;
+		cout << "结论：weak_ptr不会跟着shared_ptr改变指向。" << endl;
+		
+		// wptr.reset(sptr); //报错，无法用reset来改变weak_ptr的指向，只能用来置空。
+		wptr.reset(); //weak_ptr的reset()只能用来置空
+		wptr = sptr;  // 改变wptr的指向要用operator=
+		cout << ">>>wptr = sptr;" << endl;
+		cout << "wptr.expired() : " << wptr.expired() << endl;
+		cout << "结论：改变wptr的指向要用operator=，不能用.reset()。" << endl;
+
+		sptr.reset(new int(5)); //改变shared_ptr的指向后weak_ptr不会跟着改变指向。
+		cout << ">>> sptr.reset(5); " << endl;
+		cout << "wptr.expired() : " << wptr.expired() << endl;
+		cout << "现象：改变shared_ptr的指向后weak_ptr置空。" << endl;
+		cout << "结论：改变shared_ptr的指向后weak_ptr不会跟着改变指向，且weak_ptr置空。" << endl;
+		
+
+		// .lock() : 返回weak_ptr 指向的shared_ptr对象
+		wptr = sptr;
+		cout << "\nwptr = sptr;" << endl;
+		cout << "sptr.use_count() : " << sptr.use_count() << endl;
+		shared_ptr<int> sptr1 = wptr.lock();
+		cout << ">>> shared_ptr<int> sptr1 = wptr.lock();" << endl;
+		cout << "sptr.use_count() : " << sptr.use_count() << endl;
+		cout << "结论：weak_ptr的lock方法返回一个shared_ptr对象，会增加引用计数。" << endl;
+		sptr = wptr.lock();
+		cout << ">>> sptr = wptr.lock();" << endl;
+		cout << "sptr.use_count() : " << sptr.use_count() << endl;
+		cout << "结论：weak_ptr的lock方法返回一个的shared_ptr对象和接收的shared_ptr指向相同，就不会增加引用计数。" << endl;
+		sptr1 = wptr.lock();
+		cout << ">>> sptr1 = wptr.lock();" << endl;
+		cout << "sptr1.use_count() : " << sptr1.use_count() << endl;
+		cout << "结论：如果weak_ptr.lock()返回的shared_ptr对象和接收的shared_ptr指向相同，就不会增加引用计数。" << endl;
+
+		wptr.reset();
+		cout << ">>> sptr1 = wptr.lock();" << endl;
+		cout << "sptr.use_count() : " << sptr.use_count() << endl;
+		cout << "sptr1.use_count() : " << sptr1.use_count() << endl;
+		cout << "结论：weak_ptr置空不影响shared_ptr。" << endl;
+		wptr.reset();
+		cout << ">>> wptr.reser();" << endl;
+		sptr = wptr.lock();
+		cout << ">>> sptr1 = wptr.lock();" << endl;
+		cout << "sptr.use_count() : " << sptr.use_count() << endl;
+		cout << "sptr1.use_count() : " << sptr1.use_count() << endl;
+		cout << "结论：将空的weak_ptr lock给shared_ptr,相当于把shared_ptr置空。" << endl;
 
 	}
 	/**
