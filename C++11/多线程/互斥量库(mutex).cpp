@@ -31,19 +31,55 @@ void add1AddPrintSnum(std::string s)
 	}
 }
 
+// 使用try_lock():
+std::mutex mtx2;
+static int num = 0;
+void print1to10000(std::string str)
+{
+	for (; num <= 10000; )
+	{
+		bool flag = mtx2.try_lock();
+		if (flag)
+		{
+			//mtx2.lock();
+			num++;
+			std::cout << "flag : " << flag <<  str << num << std::endl;
+			mtx2.unlock();
+		}
+		else
+		{
+			std::cout << "flag : " << flag << str << "，临界区资源正在被其他线程访问" << std::endl;
+		}
+	}
+}
+
 // 3.两个线程对象就可以同时访问临界区资源了
 int main()
 {
+	// a. 试验lock() 和 unlock()
 	std::thread th1(print_block, 500, '*');
 	std::thread th2(print_block, 500, '$');
 	th1.join();
 	th2.join();
 
-	std::thread t1(add1AddPrintSnum, "t1 : ");
-	std::thread t2(add1AddPrintSnum, "t2 : ");
-	t1.join();
-	t2.join();
+	//std::thread t1(add1AddPrintSnum, "t1 : ");
+	//std::thread t2(add1AddPrintSnum, "t2 : ");
+	//t1.join();
+	//t2.join();
 
+	// b. 试验try_lock()
+	// 如果临界区资源正在被访问，则try_lock()返回false不阻塞调用他的线程；如果临界区资源无人访问则返回ture并上锁。
+	// try_lock()函数返回一个布尔值，如果成功锁定了互斥量，则返回true，否则返回false。由于它不会阻塞当前线程，因此它通常用于那些不希望因为等待互斥量而变得不可用的场景。
+	std::thread t3(print1to10000, ", t3 : ");
+	std::thread t4(print1to10000, ",  t4 : ");
+	std::thread t5(print1to10000, ",   t5 : ");
+	std::thread t6(print1to10000, ",    t6 : ");
+	std::cout << "try_lock不会阻塞线程。" << std::endl;
+
+	t3.join();
+	t4.join();
+	t5.join();
+	t6.join();
 	return 0;
 }
 
@@ -51,3 +87,11 @@ int main()
 //1. 创建一个全局的mutex对象(互斥量对象）// std::mutex mtx;
 //2. 在访问线程函数的临界区资源时中使用mutex对象的lock()方法进行加锁，unlock()方法进行解锁。
 //3. 多个threads对象就可以有序的访问临界区资源了。
+
+
+//a.lock()：该函数用于锁定互斥量（mutex）。
+        // 当调用lock()时，如果互斥量当前未被其他线程锁定，则当前线程将成功锁定它并继续执行后续代码。
+		// 然而，如果互斥量已经被其他线程锁定，那么调用lock()的线程将被阻塞，直到互斥量变得可用（即被其他线程解锁）。
+//b.try_lock()：该函数 尝试 锁定互斥量（mutex）。
+        // 但如果不成功（即互斥量已经被另一个线程锁定），则不会阻塞当前线程，而是立即返回false。
+        // 如果互斥量当前未被其他线程锁定，则当前线程将成功锁定它并继续执行后续代码。
