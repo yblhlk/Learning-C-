@@ -23,5 +23,23 @@ int main()
 	}
 
 	// 法二：联合体union
+	{
+		cout << "=============巧用联合体判断大小端==============" << endl;
+		// 联合体中未初始化的空间为随机值。
+		union U
+		{
+			char c ;
+			int i = 1; // 一个联合最多只能有一个字段初始值设定项
+		};
+
+		U u;
+		if (u.c == u.i)
+			cout << "当前机器是小端字节序。" << endl;
+		else
+			cout << "当前机器是大端字节序。" << endl;
+		cout << u.c << endl;
+		cout << u.i << endl;
+	}
+
 	return 0;
 }
