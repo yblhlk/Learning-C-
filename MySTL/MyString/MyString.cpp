@@ -1,7 +1,7 @@
 #include "MyString.h"
 
 // 1.构造函数
-	// 构造函数0 : 默认构造函数(不能同时有两个默认构造函数)
+// 构造函数0 : 默认构造函数(不能同时有两个默认构造函数)
 MyString::MyString()
 {
 	_str = nullptr;
@@ -104,7 +104,7 @@ MyString::MyString(MyString&& s) noexcept// 移动构造的现代写法
 	swap(s); // 直接调用自己写的swap“窃取”s的资源
 }
 
-// 析构函数
+// 2.析构函数
 MyString::~MyString()
 {
 	if (_str)
@@ -113,12 +113,65 @@ MyString::~MyString()
 	_size = _capacity = 0;
 }
 
-// 赋值运算符重载
+// 3.赋值运算符重载
+/*赋值运算符重载1:*/
+/*a.过去的写法*/
+//MyString& MyString::operator= (const MyString& s)
+//{
+//	//a. 判断是否给自己赋值
+//	if (&s != this)
+//	{
+//		//b. 深拷贝，引用内容要创建临时对象（防止深拷贝时，开辟空间失败）
+//		char* tmp = nullptr;
+//		try
+//		{
+//			tmp = new char[s._capacity]();
+//		}
+//		catch (std::bad_alloc& e)
+//		{
+//			cout << "new空间失败：" << e.what() << endl;
+//		}
+//		// c. 销毁原空间
+//		delete[] this->_str;
+//		this->_str = tmp;
+//		strcpy(this->_str, tmp);
+//		this->_size = s._size;
+//		this->_capacity = s._capacity;
+//	}
+//	
+//	return *this; // 为了支持连续赋值
+//}
+/*b.现代写法1*/
 MyString& MyString::operator= (const MyString& s)
-{}
+{
+	// a. 判断是否给自己赋值
+	if (&s != this)
+	{
+		//b. 复用构造函数创建一个临时对象(别动态开辟，不然要自己释放）
+		MyString tmp(s._str);
+		//c. 调用自己写的swap函数，交换两个对象的内容
+		swap(tmp); //直接交换两个指针的指向？(不，刚开始写错了，别动态开辟，不然要自己释放）
+		//d. 释放临时对象，会自动调用析构函数释放。
+	}
+	return *this;
+}
+/*c.现代写法2*/
+//考虑到非指针和引用形参是实参的拷贝，可以直接掠夺该资源。
+//缺点是由于无法判断是否是自我赋值，所以自己给自己赋值时效率更低。
+//MyString& MyString::operator= (MyString s)
+//{
+//	swap(s);
+//	return *this;
+//}
 MyString& MyString::operator= (const char* s)
-{}
+{
+	return *this;
+}
 MyString& MyString::operator= (char c)
-{}
+{
+	return *this;
+}
 MyString& MyString::operator= (MyString&& s) noexcept
-{}
+{
+	return *this;
+}

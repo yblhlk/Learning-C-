@@ -14,5 +14,7 @@ int main()
 	MyString s4(s2);
 	MyString s5(std::move(s2));
 
+	s2 = s1;
+
 	return 0;
 }

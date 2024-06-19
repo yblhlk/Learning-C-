@@ -62,13 +62,15 @@ public:
 
 // 赋值运算符重载
 	MyString& operator= (const MyString& s);
+	//MyString& operator= (MyString s);
 	MyString& operator= (const char* s);
 	MyString& operator= (char c);
 	// 移动赋值：作用是掠夺目标对象的资源。
 	MyString& operator= (MyString&& s) noexcept;
 };
 
-
+//参照STL中的string类来写一个MyString：
+//day1.构造函数和析构函数
 
 
 
