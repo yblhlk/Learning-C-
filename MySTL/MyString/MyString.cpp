@@ -114,7 +114,7 @@ MyString::~MyString()
 }
 
 // 3.赋值运算符重载
-/*赋值运算符重载1:*/
+/*赋值运算符重载1: MyString对象赋值*/
 /*a.过去的写法*/
 //MyString& MyString::operator= (const MyString& s)
 //{
@@ -163,15 +163,23 @@ MyString& MyString::operator= (const MyString& s)
 //	swap(s);
 //	return *this;
 //}
+/*赋值运算符重载2: char数组和字面字符串赋值*/
 MyString& MyString::operator= (const char* s)
 {
+	MyString tmp(s);
+	swap(tmp);
 	return *this;
 }
+/*赋值运算符重载3: char字符赋值*/
 MyString& MyString::operator= (char c)
 {
+	MyString tmp(&c); // 会越界吗？--不会
+	swap(tmp);
 	return *this;
 }
+/*赋值运算符重载4: 移动赋值*/
 MyString& MyString::operator= (MyString&& s) noexcept
 {
+	swap(s);
 	return *this;
 }
